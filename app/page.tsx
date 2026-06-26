@@ -1,23 +1,46 @@
+import { getHistoricalStorms } from "@/app/dal/ibtracs";
+import { Overview } from "@/features/overview";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  getACEDistribution,
+  getHistoricalMetrics,
+  groupBySeason,
+  rankStormsByACE,
+} from "@/lib/storm-analytics";
+// import type { LiveAdvisory } from "@/types/storms";
 
-export default function Home() {
+// async function getLiveAdvisory(): Promise<LiveAdvisory | null> {
+//   return null;
+// }
+
+export default async function HomePage() {
+  const [historicalStorms] = await Promise.all([
+    getHistoricalStorms(),
+    // getLiveAdvisory(),
+  ]);
+
+  const rankedStorms = rankStormsByACE(historicalStorms);
+  const seasonSummaries = groupBySeason(historicalStorms);
+  const historicalMetrics = getHistoricalMetrics(historicalStorms);
+  const aceDistribution = getACEDistribution(historicalStorms);
+
   return (
-    <Card className="max-w-sm">
-      <CardHeader>
-        <CardTitle>Project Overview</CardTitle>
-        <CardDescription>
-          Track progress and recent activity for your Next.js app.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        Your design system is ready. Start building your next component.
-      </CardContent>
-    </Card>
+    <div className="flex flex-col gap-6">
+      <header className="flex flex-col">
+        <div className="flex items-center justify-between">
+          <h1 className="font-bold text-2xl tracking-tight">Sigwa PH</h1>
+          {/*<ModeToggle />*/}
+        </div>
+        <p className="text-base text-muted-foreground">
+          Typhoon energy analytics for the Philippine Area of Responsibility,
+          ranked by Accumulated Cyclone Energy (ACE).
+        </p>
+      </header>
+
+      <Overview
+        metrics={historicalMetrics}
+        seasonSummaries={seasonSummaries}
+        aceDistribution={aceDistribution}
+      />
+    </div>
   );
 }
