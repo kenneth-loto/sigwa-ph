@@ -10,6 +10,12 @@ import type {
 const ACCEPTED_TRACK_TYPES = new Set(["MAIN"]);
 const ACCEPTED_NATURE_VALUES = new Set(["TS"]);
 
+// Seasons at or above this threshold may not yet have WMO reanalysis —
+// fall back to USA_WIND (JTWC) for provisional data. Once JMA finalizes
+// the season, the next annual preprocess run will use WMO_WIND and
+// correct the values automatically.
+const PROVISIONAL_SEASON_THRESHOLD = new Date().getFullYear() - 1;
+
 export function parseIBTraCSNumber(rawValue: string | undefined): number {
   const trimmed = (rawValue ?? "").trim();
   if (trimmed === "") return NaN;
@@ -42,10 +48,24 @@ export function parseIBTraCSCSV(rawCSV: string): IBTraCSRecord[] {
     if (!ACCEPTED_TRACK_TYPES.has(trackType)) continue;
     if (!ACCEPTED_NATURE_VALUES.has(nature)) continue;
 
-    const wind = parseIBTraCSNumber(row.WMO_WIND);
     const lat = parseIBTraCSNumber(row.LAT);
     const lon = parseIBTraCSNumber(row.LON);
     const season = parseIBTraCSNumber(row.SEASON);
+
+    // WMO_WIND is blank for provisional seasons not yet reanalyzed by JMA.
+    // For recent seasons fall back to USA_WIND (JTWC 1-minute winds).
+    // NOTE: USA_WIND uses 1-minute averaging vs JMA's 10-minute — this
+    // makes provisional storm ACE values ~12% higher than finalized ones.
+    // Accepted tradeoff: provisional storms appear in rankings rather than
+    // being silently dropped. Once JMA finalizes the season, the next
+    // annual preprocess run will use WMO_WIND and correct the values.
+    const wmoWind = parseIBTraCSNumber(row.WMO_WIND);
+    const wind =
+      !Number.isNaN(wmoWind) && wmoWind > 0
+        ? wmoWind
+        : season >= PROVISIONAL_SEASON_THRESHOLD
+          ? parseIBTraCSNumber(row.USA_WIND)
+          : NaN;
 
     if (
       Number.isNaN(wind) ||
@@ -73,9 +93,6 @@ export function parseIBTraCSCSV(rawCSV: string): IBTraCSRecord[] {
   return records;
 }
 
-/**
- * Converts a single IBTraCSRecord into a StormTrackPoint.
- */
 function recordToTrackPoint(record: IBTraCSRecord): StormTrackPoint {
   return {
     lat: record.lat,
@@ -90,6 +107,7 @@ export function groupRecordsIntoStorms(
   records: IBTraCSRecord[],
 ): TyphoonStorm[] {
   const bySid = new Map<string, IBTraCSRecord[]>();
+
   for (const record of records) {
     const existing = bySid.get(record.sid);
     if (existing) {

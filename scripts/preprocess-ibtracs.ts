@@ -1,10 +1,9 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { groupRecordsIntoStorms, parseIBTraCSCSV } from "@/lib/ibtracs-parser";
+import { serverEnv } from "@/env/server";
+import { groupRecordsIntoStorms, parseIBTraCSCSV } from "@/lib/ibtracs-parsers";
 
-const IBTRACS_WP_CSV_URL =
-  "https://www.ncei.noaa.gov/data/international-best-track-archive-for-climate-stewardship-ibtracs/v04r01/access/csv/ibtracs.WP.list.v04r01.csv";
-
+const IBTRACS_WP_CSV_URL = serverEnv.IBTRACS_WP_CSV_URL;
 const OUTPUT_DIR = join(process.cwd(), "data");
 const OUTPUT_PATH = join(OUTPUT_DIR, "historical-storms.json");
 
@@ -26,6 +25,12 @@ async function main() {
   console.log(
     `[preprocess-ibtracs] Fetched ${(rawCSV.length / 1_000_000).toFixed(1)}MB in ${fetchMs}ms`,
   );
+
+  // TEMPORARY DEBUG: Check if 2025 or 2026 even exist in the raw string
+  const has2025 = rawCSV.includes(",2025,");
+  const has2026 = rawCSV.includes(",2026,");
+  console.log(`[DEBUG] Raw CSV contains '2025': ${has2025}`);
+  console.log(`[DEBUG] Raw CSV contains '2026': ${has2026}`);
 
   console.log("[preprocess-ibtracs] Parsing CSV...");
   const startParse = performance.now();

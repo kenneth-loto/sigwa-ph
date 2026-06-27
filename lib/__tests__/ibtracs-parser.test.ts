@@ -3,7 +3,7 @@ import {
   groupRecordsIntoStorms,
   parseIBTraCSCSV,
   parseIBTraCSNumber,
-} from "../ibtracs-parser";
+} from "../ibtracs-parsers";
 
 const FIXTURE_CSV = `SID,NAME,SEASON,LAT,LON,WMO_WIND,WMO_PRES,ISO_TIME,TRACK_TYPE,NATURE
 SID,NAME,Year,deg_north,deg_east,knots,mb,UTC,,,
