@@ -14,3 +14,12 @@ export const PAR_BOUNDS = {
   east: 135,
   west: 115,
 } as const;
+
+export const HOMEPAGE_TABS = [
+  "overview",
+  "ace-ranking-table",
+  // "incident-feed-table",
+] as const;
+
+export const MOBILE_BREAKPOINT = 768;
+export const MOBILE_QUERY = `(max-width: ${MOBILE_BREAKPOINT - 1}px)`;
